@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Deepfake Detection</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Deepfake Detection</h1>
+        <div class="card">
+            <input type="file" id="fileInput" accept="image/*">
+            <button id="predictBtn">Predict</button>
+            <p id="result"></p>
+        </div>
+    </div>
+
+    <script>
+        const predictBtn = document.getElementById("predictBtn");
+        predictBtn.addEventListener("click", async () => {
+            const fileInput = document.getElementById("fileInput");
+            if (!fileInput.files[0]) {
+                alert("Please select an image!");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("image", fileInput.files[0]);
+
+            const resultEl = document.getElementById("result");
+            resultEl.innerText = "Predicting...";
+
+            try {
+                const response = await fetch("/predict", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultEl.innerText = `Prediction: ${data.prediction}, Confidence: ${data.confidence}`;
+                } else {
+                    resultEl.innerText = `Error: ${data.error}`;
+                }
+            } catch (err) {
+                resultEl.innerText = "Error: Could not reach server.";
+                console.error(err);
+            }
+        });
+    </script>
+</body>
+</html>
