@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Deepfake and Fake News Detector</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f9f9f9; }
+        h1 { text-align: center; margin-bottom: 30px; }
+        .section { margin-bottom: 60px; }
+        .card { background-color: #fff; padding: 20px; box-shadow: 0 0 5px rgba(0,0,0,0.1); max-width: 600px; margin: auto; text-align: center; }
+        input[type="file"], input[type="text"] { width: 80%; padding: 8px; margin-bottom: 10px; }
+        button { padding: 8px 16px; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; background-color: #fff; box-shadow: 0 0 5px rgba(0,0,0,0.1); margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        tr.FAKE { background-color: #ffdddd; }
+        tr.REAL { background-color: #ddffdd; }
+        tr:hover { background-color: #e0e0e0; }
+        .confidence-bar { background-color: #ddd; width: 100%; height: 12px; border-radius: 5px; overflow: hidden; margin-bottom: 5px; }
+        .confidence-fill { background-color: #4CAF50; height: 100%; }
+        a { color: #007BFF; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <h1>Deepfake and Fake News Detector</h1>
+
+    <!-- Deepfake Detection -->
+    <div class="section">
+        <h2>Deepfake Detection</h2>
+        <div class="card">
+            <input type="file" id="fileInput" accept="image/*"><br>
+            <button id="predictBtn">Predict</button>
+            <p id="deepfakeResult"></p>
+        </div>
+    </div>
+
+    <!-- Fake News Detection -->
+    <div class="section">
+        <h2>Fake News Detection</h2>
+        <div class="card">
+            <form method="POST">
+                <input type="text" name="query" placeholder="Enter keyword" required>
+                <button type="submit">Search</button>
+            </form>
+
+            {% if results %}
+            <table>
+                <tr>
+                    <th>#</th>
+                    <th>Title</th>
+                    <th>Source</th>
+                    <th>Prediction</th>
+                    <th>Confidence</th>
+                    <th>URL</th>
+                </tr>
+                {% for news in results %}
+                <tr class="{{ news.prediction.label }}">
+                    <td>{{ loop.index }}</td>
+                    <td>{{ news.title }}</td>
+                    <td>{{ news.source or 'Unknown' }}</td>
+                    <td>{{ news.prediction.label }}</td>
+                    <td>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" ></div>
+                        </div>
+                        {{ "%.2f"|format(news.prediction.score*100) }}%
+                    </td>
+                    <td><a href="{{ news.url }}" target="_blank">Link</a></td>
+                </tr>
+                {% endfor %}
+            </table>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        // Deepfake Prediction JS
+        const predictBtn = document.getElementById("predictBtn");
+        predictBtn.addEventListener("click", async () => {
+            const fileInput = document.getElementById("fileInput");
+            if (!fileInput.files[0]) {
+                alert("Please select an image!");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("image", fileInput.files[0]);
+
+            const resultEl = document.getElementById("deepfakeResult");
+            resultEl.innerText = "Predicting...";
+
+            try {
+                const response = await fetch("/predict", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultEl.innerText = `Prediction: ${data.prediction}, Confidence: ${data.confidence}`;
+                } else {
+                    resultEl.innerText = `Error: ${data.error}`;
+                }
+            } catch (err) {
+                resultEl.innerText = "Error: Could not reach server.";
+                console.error(err);
+            }
+        });
+    </script>
+</body>
+</html>
